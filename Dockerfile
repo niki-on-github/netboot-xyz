@@ -35,7 +35,7 @@ RUN echo "    sleep 5" >> entrypoint.sh
 RUN echo "    exit 1" >> /entrypoint.sh
 RUN echo "fi" >> /entrypoint.sh
 RUN echo "sed -i \"s/{NETWORK_IP}/\${NETWORK_IP}/g\" /etc/dnsmasq.conf" >> /entrypoint.sh
-RUN echo "echo 'start dnsmasq'" >> /entrypoint.sh
+RUN echo "echo \"start dnsmasq on \${NETWORK_IP}\"" >> /entrypoint.sh
 RUN echo "/usr/sbin/dnsmasq -k --log-facility=-" >> /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
