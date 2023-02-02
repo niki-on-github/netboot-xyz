@@ -20,3 +20,5 @@ services:
     environment:
       NETWORK_IP: "{{ network_ip }}"
 ```
+
+The `NETWORK_IP` for an `192.168.1.0/24` Network is `192.168.1.0`.
