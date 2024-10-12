@@ -16,8 +16,8 @@ jobs:
         run: |
           cleaned_pr_title=$(echo "${{ github.event.pull_request.title }}" | sed 's/"//g')
           echo "$cleaned_pr_title"
-          if [[ "$cleaned_pr_title" == *"dependency netbootxyz/netboot.xyz to "* ]]; then
-            version=$(echo "${{ github.event.pull_request.title }}" | grep -oP '\d+\.\d+\.\d+')
+          if [[ "$cleaned_pr_title" == *"dependency netbootxyz/netboot.xyz to v"* ]]; then
+            version=$(echo "${{ github.event.pull_request.title }}" | grep -oP 'v\d+\.\d+\.\d+')
             echo "create tag $version"
             echo "version=$version" >> $GITHUB_OUTPUT
           else
