@@ -4,7 +4,7 @@ ARG NETBOOT_XYZ_VERSION=2.0.81
 
 RUN mkdir -p /tftpboot/efi64
 RUN chmod -R 555 /tftpboot
-RUN "echo $NETBOOT_XYZ_VERSION" > /tftpboot/VERSION.txt
+RUN echo "$NETBOOT_XYZ_VERSION" > /tftpboot/VERSION.txt
 
 RUN apk add --no-cache --update dnsmasq curl
 
