@@ -28,6 +28,7 @@ RUN echo "tftp-root=/tftpboot" >> /etc/dnsmasq.conf
 RUN echo "user=root # Solve: operation not permitted" >> /etc/dnsmasq.conf
 
 # /etc/conf.d/dnsmasq
+RUN mkdir -p /etc/conf.d
 RUN echo "DNSMASQ_EXCEPT=lo" >> /etc/conf.d/dnsmasq
 
 # /entrypoint.sh
