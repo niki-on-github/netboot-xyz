@@ -1,7 +1,10 @@
 FROM alpine:latest
 
+ARG NETBOOT_XYZ_VERSION=1.0.0
+
 RUN mkdir -p /tftpboot/efi64
 RUN chmod -R 555 /tftpboot
+RUN "echo $NETBOOT_XYZ_VERSION" > /tftpboot/VERSION.txt
 
 RUN apk add --no-cache --update dnsmasq curl
 
