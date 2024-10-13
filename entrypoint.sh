@@ -6,6 +6,7 @@ if [ -z "${NETWORK_IP}" ]; then
 fi
 if [ -n "${INTERFACE}" ]; then
     echo "interface=${INTERFACE}" >> /etc/dnsmasq.conf
+    echo "interface=${INTERFACE}"
 fi
 sed -i "s/{NETWORK_IP}/${NETWORK_IP}/g" /etc/dnsmasq.conf
 echo "start dnsmasq for network=${NETWORK_IP}"
