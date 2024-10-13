@@ -10,6 +10,7 @@ RUN apk add --no-cache --update dnsmasq curl
 
 RUN mv /etc/dnsmasq.conf /etc/dnsmasq.conf.bak
 
+# TODO use github release URL with version
 RUN cd /tftpboot \
     && curl -O https://boot.netboot.xyz/ipxe/netboot.xyz.kpxe
 
@@ -31,16 +32,7 @@ RUN echo "user=root # Solve: operation not permitted" >> /etc/dnsmasq.conf
 RUN mkdir -p /etc/conf.d
 RUN echo "DNSMASQ_EXCEPT=lo" >> /etc/conf.d/dnsmasq
 
-# /entrypoint.sh
-RUN echo "#!/bin/sh" > /entrypoint.sh
-RUN echo "if [ -z \"\${NETWORK_IP}\" ]; then" >> /entrypoint.sh
-RUN echo "    echo \"ERROR: NETWORK_IP env variable is not set\"" >> /entrypoint.sh
-RUN echo "    sleep 5" >> entrypoint.sh
-RUN echo "    exit 1" >> /entrypoint.sh
-RUN echo "fi" >> /entrypoint.sh
-RUN echo "sed -i \"s/{NETWORK_IP}/\${NETWORK_IP}/g\" /etc/dnsmasq.conf" >> /entrypoint.sh
-RUN echo "echo \"start dnsmasq on \${NETWORK_IP}\"" >> /entrypoint.sh
-RUN echo "/usr/sbin/dnsmasq -k --log-facility=-" >> /entrypoint.sh
+COPY /entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 EXPOSE 69/udp
