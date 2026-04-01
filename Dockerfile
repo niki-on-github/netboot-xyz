@@ -1,6 +1,6 @@
 FROM alpine:latest
 
-ARG NETBOOT_XYZ_VERSION=3.0.0
+ARG NETBOOT_XYZ_VERSION=3.0.1
 
 RUN mkdir -p /tftpboot/efi64
 RUN chmod -R 555 /tftpboot
