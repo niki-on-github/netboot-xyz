@@ -1,6 +1,9 @@
 FROM alpine:latest
 
-ARG NETBOOT_XYZ_VERSION=3.0.2
+# Pinned to 2.0.89 (iPXE 1.20.x): netboot.xyz v3 bootloaders use iPXE 2.0.0+,
+# which fails with "Network unreachable" behind a proxy DHCP server
+# (see https://github.com/netbootxyz/netboot.xyz/issues/1793).
+ARG NETBOOT_XYZ_VERSION=2.0.89
 
 RUN mkdir -p /tftpboot/efi64
 RUN chmod -R 555 /tftpboot
@@ -10,12 +13,13 @@ RUN apk add --no-cache --update dnsmasq curl
 
 RUN mv /etc/dnsmasq.conf /etc/dnsmasq.conf.bak
 
-# TODO use github release URL with version
+# download bootloader from the pinned github release, boot.netboot.xyz always
+# serves the latest (now v3) which is broken with proxy DHCP
 RUN cd /tftpboot \
-    && curl -O https://boot.netboot.xyz/ipxe/netboot.xyz.kpxe
+    && curl -fSL -o netboot.xyz.kpxe "https://github.com/netbootxyz/netboot.xyz/releases/download/${NETBOOT_XYZ_VERSION}/netboot.xyz.kpxe"
 
 RUN cd /tftpboot/efi64 \
-    && curl -O https://boot.netboot.xyz/ipxe/netboot.xyz.efi
+    && curl -fSL -o netboot.xyz.efi "https://github.com/netbootxyz/netboot.xyz/releases/download/${NETBOOT_XYZ_VERSION}/netboot.xyz.efi"
 
 # /etc/dnsmasq.conf
 RUN echo "port=0 # Disable DHCP/DNS service" > /etc/dnsmasq.conf

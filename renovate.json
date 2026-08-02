@@ -31,7 +31,8 @@
       "matchPackageNames": [
         "netbootxyz/netboot.xyz"
       ],
-      "extractVersion": "^(?<version>\\d+\\.\\d+\\.\\d+)"
+      "extractVersion": "^(?<version>\\d+\\.\\d+\\.\\d+)",
+      "allowedVersions": "<3"
     },
     {
       "matchUpdateTypes": [
