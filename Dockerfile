@@ -34,24 +34,29 @@ RUN curl -fSL -o /tmp/autoexec.ipxe "https://github.com/netbootxyz/netboot.xyz/r
 
 # Work around netboot.xyz #1793: iPXE 2.0.0+ can leave routing unconfigured
 # behind a proxy DHCP server ("Network unreachable" / ipxe error 280a6090).
-# Re-running DHCP re-establishes the default route; fall back to re-applying
-# the DHCP-obtained config manually. This file is chained automatically by
-# the embedded script from the proxy DHCP next-server. It ends without exit
-# so control returns to the embedded script, which then loads the remote
-# HTTPS menu (kept fresh from boot.netboot.xyz).
+# The issue is a race/interface-state bug: reset the interface, pause briefly,
+# then reconfigure via DHCP using ifconf (which opens the interface and installs
+# the default route). As a fallback, re-apply the DHCP-obtained settings with the
+# correct order (set values BEFORE opening the interface) so the route is built.
+# This file is chained automatically by the embedded script from the proxy DHCP
+# next-server. It ends without exit so control returns to the embedded script,
+# which then loads the remote HTTPS menu (kept fresh from boot.netboot.xyz).
 RUN printf '%s\n' \
     '#!ipxe' \
     '# Workaround for netboot.xyz #1793' \
-    'dhcp net0 && goto done ||' \
-    'echo DHCP retry failed, attempting manual re-apply...' \
+    'ifclose net0' \
+    'sleep 2' \
+    'ifconf --configurator dhcp net0 && goto done ||' \
+    'echo ifconf DHCP failed, attempting manual re-apply...' \
     'set saved-ip ${net0/ip}' \
     'set saved-mask ${net0/netmask}' \
     'set saved-gateway ${net0/gateway}' \
-    'ifclose net0' \
-    'ifopen net0' \
+    'set saved-dns ${net0/dns}' \
     'set net0/ip ${saved-ip}' \
     'set net0/netmask ${saved-mask}' \
     'set net0/gateway ${saved-gateway}' \
+    'set net0/dns ${saved-dns}' \
+    'ifopen net0' \
     'route' \
     ':done' \
     > /tftpboot/local-vars.ipxe
