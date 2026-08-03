@@ -32,7 +32,7 @@
         "netbootxyz/netboot.xyz"
       ],
       "extractVersion": "^(?<version>\\d+\\.\\d+\\.\\d+)",
-      "allowedVersions": "<3"
+      "allowedVersions": ">=3 <4"
     },
     {
       "matchUpdateTypes": [
