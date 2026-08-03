@@ -16,40 +16,53 @@ RUN apk add --no-cache --update dnsmasq curl
 
 RUN mv /etc/dnsmasq.conf /etc/dnsmasq.conf.bak
 
-# download bootloader from the pinned github release, boot.netboot.xyz always
-# serves the latest (now v3) which is broken with proxy DHCP
+# Use the "-legacy" bootloaders: iPXE 2.0.0+ compiles USB NIC drivers in by
+# default, which breaks BIOS SMM USB-legacy keyboard emulation (netboot.xyz
+# issues #1769/#1780). The -legacy variants exclude USB NIC drivers and are
+# matched by the v3 embedded script.
 RUN cd /tftpboot \
-    && curl -fSL -o netboot.xyz.kpxe "https://github.com/netbootxyz/netboot.xyz/releases/download/${NETBOOT_XYZ_VERSION}/netboot.xyz.kpxe"
+    && curl -fSL -o netboot.xyz-legacy.kpxe "https://github.com/netbootxyz/netboot.xyz/releases/download/${NETBOOT_XYZ_VERSION}/netboot.xyz-legacy.kpxe"
 
 RUN cd /tftpboot/efi64 \
-    && curl -fSL -o netboot.xyz.efi "https://github.com/netbootxyz/netboot.xyz/releases/download/${NETBOOT_XYZ_VERSION}/netboot.xyz.efi"
+    && curl -fSL -o netboot.xyz-legacy.efi "https://github.com/netbootxyz/netboot.xyz/releases/download/${NETBOOT_XYZ_VERSION}/netboot.xyz-legacy.efi"
 
-# Work around netboot.xyz #1793: iPXE 2.0.0+ leaves the NIC closed after
-# proxy DHCP, so re-apply the DHCP-obtained config before the menu fetch.
-# This file is chained automatically by the embedded script from the
-# proxy DHCP next-server. The script ends without exit so control returns
-# to the embedded script.
+# Ship the release autoexec.ipxe to both TFTP locations so iPXE's optional
+# autoexec.ipxe probe does not log "not found".
+RUN curl -fSL -o /tmp/autoexec.ipxe "https://github.com/netbootxyz/netboot.xyz/releases/download/${NETBOOT_XYZ_VERSION}/autoexec.ipxe" \
+    && cp /tmp/autoexec.ipxe /tftpboot/autoexec.ipxe \
+    && cp /tmp/autoexec.ipxe /tftpboot/efi64/autoexec.ipxe
+
+# Work around netboot.xyz #1793: iPXE 2.0.0+ can leave routing unconfigured
+# behind a proxy DHCP server ("Network unreachable" / ipxe error 280a6090).
+# Re-running DHCP re-establishes the default route; fall back to re-applying
+# the DHCP-obtained config manually. This file is chained automatically by
+# the embedded script from the proxy DHCP next-server. It ends without exit
+# so control returns to the embedded script, which then loads the remote
+# HTTPS menu (kept fresh from boot.netboot.xyz).
 RUN printf '%s\n' \
     '#!ipxe' \
+    '# Workaround for netboot.xyz #1793' \
+    'dhcp net0 && goto done ||' \
+    'echo DHCP retry failed, attempting manual re-apply...' \
     'set saved-ip ${net0/ip}' \
     'set saved-mask ${net0/netmask}' \
     'set saved-gateway ${net0/gateway}' \
-    'set saved-dns ${net0/dns}' \
     'ifclose net0' \
     'ifopen net0' \
     'set net0/ip ${saved-ip}' \
     'set net0/netmask ${saved-mask}' \
     'set net0/gateway ${saved-gateway}' \
-    'set net0/dns ${saved-dns}' \
+    'route' \
+    ':done' \
     > /tftpboot/local-vars.ipxe
 
 # /etc/dnsmasq.conf
 RUN echo "port=0 # Disable DHCP/DNS service" > /etc/dnsmasq.conf
 RUN echo "dhcp-range={NETWORK_IP},proxy" >> /etc/dnsmasq.conf
 RUN echo "dhcp-boot=pxelinux.0" >> /etc/dnsmasq.conf
-RUN echo 'pxe-service=x86PC, "Boot BIOS PXE", netboot.xyz.kpxe' >> /etc/dnsmasq.conf
-RUN echo 'pxe-service=BC_EFI, "Boot UEFI PXE-BC", efi64/netboot.xyz.efi' >> /etc/dnsmasq.conf
-RUN echo 'pxe-service=x86-64_EFI, "Boot UEFI PXE-64", efi64/netboot.xyz.efi' >> /etc/dnsmasq.conf
+RUN echo 'pxe-service=x86PC, "Boot BIOS PXE", netboot.xyz-legacy.kpxe' >> /etc/dnsmasq.conf
+RUN echo 'pxe-service=BC_EFI, "Boot UEFI PXE-BC", efi64/netboot.xyz-legacy.efi' >> /etc/dnsmasq.conf
+RUN echo 'pxe-service=x86-64_EFI, "Boot UEFI PXE-64", efi64/netboot.xyz-legacy.efi' >> /etc/dnsmasq.conf
 RUN echo "enable-tftp" >> /etc/dnsmasq.conf
 RUN echo "tftp-root=/tftpboot" >> /etc/dnsmasq.conf
 RUN echo "user=root # Solve: operation not permitted" >> /etc/dnsmasq.conf
