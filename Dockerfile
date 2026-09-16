@@ -6,7 +6,7 @@ FROM alpine:latest
 # v3 (iPXE 2.0.0+) still has a "Network unreachable" bug behind proxy DHCP
 # (https://github.com/netbootxyz/netboot.xyz/issues/1793) which is worked
 # around via /tftpboot/local-vars.ipxe below.
-ARG NETBOOT_XYZ_VERSION=3.0.2
+ARG NETBOOT_XYZ_VERSION=3.0.3
 
 RUN mkdir -p /tftpboot/efi64
 RUN chmod -R 555 /tftpboot
